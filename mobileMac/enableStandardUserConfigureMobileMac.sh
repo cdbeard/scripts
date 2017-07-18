@@ -1,6 +1,25 @@
 #!/bin/bash
 #
-# V3 - paramterise to allow granularity
+# V4 - create functions to allow/default the settings. 
+
+function controlAuthRight {
+  domain=$1
+  action=$2
+  plistPath="/tmp/${domain}.plist"
+
+
+  if [[ "${action}" != "allow" && "${action}" != "default" ]]; then
+    printf "controlSystemPreference function called with invalid 'action' argument (valid: allow, default).\n"
+    exit 1
+  fi
+
+  printf "Setting security domain ${domain} to ${action}...\n"
+  security authorizationdb read ${domain} > ${plistPath}
+  defaults write ${plistPath} rule -string ${action}
+  security authorizationdb write ${domain} < ${plistPath}
+}
+
+
 
 usage="Usage: $0 [ -t -p -n ]\n  -t: enable standard user to configure Time Machine SysPrefs pane\n  -p: enable standard user to configure Printers & Scanners pane\n  -n: enable standard user to configure Network pane\n"
 
@@ -33,33 +52,18 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 if [[ "${timemachine}" == true ]]; then
-  printf "Unlocking Time Machine pane...\n"
-
-  security authorizationdb read system.preferences > /tmp/system.preferences.plist
-  defaults write /tmp/system.preferences.plist rule -string allow
-  security authorizationdb write system.preferences < /tmp/system.preferences.plist
-  
-  security authorizationdb read system.preferences.timemachine > /tmp/system.preferences.timemachine.plist
-  defaults write /tmp/system.preferences.timemachine.plist rule -string allow
-  security authorizationdb write system.preferences.timemachine < /tmp/system.preferences.timemachine.plist
+  printf "Unlocking Time Machine pane:\n"
+  controlAuthRight system.preferences allow
+  controlAuthRight system.preferences.timemachine allow
 fi
 
 if [[ "${printing}" == true ]]; then
-  printf "Unlocking Printers & Scanners pane...\n"
-  
-  security authorizationdb read system.preferences.printing > /tmp/system.preferences.printing.plist
-  defaults write /tmp/system.preferences.printing.plist rule -string allow
-  security authorizationdb write system.preferences.printing < /tmp/system.preferences.printing.plist
+  printf "Unlocking Printers & Scanners pane:\n"
+  controlAuthRight system.preferences.printing allow 
 fi  
   
 if [[ "${network}" == true ]]; then
-  printf "Unlocking Network pane...\n"
-  
-  security authorizationdb read system.preferences.network > /tmp/system.preferences.network.plist
-  defaults write /tmp/system.preferences.network.plist rule -string allow
-  security authorizationdb write system.preferences.network < /tmp/system.preferences.network.plist
-
-  security authorizationdb read system.services.systemconfiguration.network > /tmp/system.services.systemconfiguration.network.plist
-  defaults write /tmp/system.services.systemconfiguration.network.plist rule -string allow
-  security authorizationdb write system.services.systemconfiguration.network < /tmp/system.services.systemconfiguration.network.plist
+  printf "Unlocking Network pane:\n"
+  controlAuthRight system.preferences.network allow
+  controlAuthRight system.services.systemconfiguration.network allow
 fi
