@@ -19,10 +19,13 @@ function controlAuthRight {
   security authorizationdb write ${domain} < ${plistPath}
 }
 
-usage="Usage: $0 <dummy> <dummy> <dummy> <[ (-|+)<feature1> | (-|+)<feature2> | etc ]\n\
-  <feature>:   t(imemachine) | p(rinting) | n(etwork)\n\
-  -<feature>:  allow standard user to configure OS feature\n\
-  +<feature>:  set feature restrictions to default\n\
+usage="Usage: $0 <dummy> <dummy> <dummy> [ <feature1> | <feature2> | <feature3> | etc ]\n\
+  <feature>:   -t|--timemachine    allow standard user to configure Time Machine\n\
+  <feature>:   +t|++timemachine    set Time Machine access to default\n\
+  <feature>:   -n|--network        allow standard user to configure Network\n\
+  <feature>:   +n|++network        set Network access to default\n\
+  <feature>:   -p|--printing       allow standard user to configure Printers & Scanners\n\
+  <feature>:   +p|++printing       set Printer access to default\n\
 This script is intended to be run from a JSS which will automatically populate the first three parameters.\n"
 
 if [[ `id -u` -ne 0 ]]; then
@@ -46,29 +49,32 @@ printf "Username: $1\n"
 shift
 
 while [[ "$#" -gt 0 ]]; do
-  case "$1" in
-    -timemachine|-t)
-      tmaction=allow
-      tmcount=$[$tmcount+1];;
-    +timemachine|+t)
-      tmaction=default
-      tmcount=$[$tmcount+1];;
-    -printing|-p)
-      praction=allow
-      prcount=$[$prcount+1];;
-    +printing|+p)
-      praction=default
-      prcount=$[$prcount+1];;
-    -network|-n)
-      neaction=allow
-      necount=$[$necount+1];;
-    +network|+n)
-      neaction=default
-      necount=$[$necount+1];;
-    *)
-      printf "${usage}"
-      exit 1;
-  esac
+  if [[ "$1" != "" ]]; then 
+    case "$1" in
+      --timemachine|-t)
+        tmaction=allow
+        tmcount=$[$tmcount+1];;
+      ++timemachine|+t)
+        tmaction=default
+        tmcount=$[$tmcount+1];;
+      --printing|-p)
+        praction=allow
+        prcount=$[$prcount+1];;
+      ++printing|+p)
+        praction=default
+        prcount=$[$prcount+1];;
+      --network|-n)
+        neaction=allow
+        necount=$[$necount+1];;
+      ++network|+n)
+        neaction=default
+        necount=$[$necount+1];;
+      *)
+        printf "ERROR: Unrecognised option: $1\n"
+        printf "${usage}"
+        exit 1;
+    esac
+  fi
   shift
 done
 
